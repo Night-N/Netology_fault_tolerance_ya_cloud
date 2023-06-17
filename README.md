@@ -36,8 +36,6 @@
 
 - Плэйбук терраформа:</br>
 [main-lb-target-group](./main-lb-target-group)</br>
-[metadata.yaml](./metadata.yaml)</br>
-[variables.tf](./variables.tf)
 
 два хоста создаются с применением аргумента count
 ```
@@ -90,12 +88,16 @@ resource "yandex_lb_network_load_balancer" "lb-1" {
 [ansible-nginx.yml](./ansible-nginx.yml)
 
 2й вариант установки nginx - сразу же терраформом передаём яндексу параметры с помощью #cloud-config. На мой взгляд самый простой вариант:</br>
-[metadata.yaml](./metadata.yaml)
+metadata.yaml
 ```
 #cloud-config
-...
-...
-...
+users:
+  - name: night
+    groups: sudo
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    ssh-authorized-keys:
+      - ${file("./yc-terraform.pub")}
 package_update: true
 package_upgrade: true
 packages:
@@ -134,13 +136,25 @@ packages:
 [metadata.yaml](./metadata.yaml)
 ```
 #cloud-config
-...
-...
-...
+users:
+  - name: night
+    groups: sudo
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    ssh-authorized-keys:
+      - ${file("./yc-terraform.pub")}
+timezone: Europe/Moscow
 package_update: true
 package_upgrade: true
+apt:
+  preserve_sources_list: true
 packages:
   - nginx
+runcmd:
+  - [ systemctl, nginx-reload ]
+  - [ systemctl, enable, nginx.service ]
+  - [ systemctl, start, --no-block, nginx.service ]
+  - [ sh, -c, "echo $(hostname | cut -d '.' -f 1 ) > /var/www/html/index.html" ]
 ```
 ![](./img/task2-1.png)
 ![](./img/task2-2.jpg)
